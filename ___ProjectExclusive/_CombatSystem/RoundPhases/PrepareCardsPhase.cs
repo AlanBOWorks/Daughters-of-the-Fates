@@ -23,9 +23,13 @@ namespace CombatSystem
 
         private const int PredictionOfAmountOfPlays = 2 * 2; //2 cards for "Harmony" * 2 (through 2 turns) 
         private int CalculateListLength() => PredictionOfAmountOfPlays * _systemCharacters.Count;
+
+        public readonly List<IOnPreparedCharactersOrder> CharactersOrdersListeners;
+        private const int PredictedAmountOfListeners = 4;
+
         public PrepareCardsPhase(CombatCharactersHolder charactersHolder)
         {
-            _systemCharacters = charactersHolder.CharactersInCombat;
+            _systemCharacters = charactersHolder.ListCharactersInCombat;
             int amountOfCharacters = _systemCharacters.Count;
 
             _characterOrder = new Dictionary<CombatSystemCharacter, int>(amountOfCharacters);
@@ -43,6 +47,8 @@ namespace CombatSystem
             }
 
             _checkIsReady = IsReadyToPush;
+
+            CharactersOrdersListeners = new List<IOnPreparedCharactersOrder>(PredictedAmountOfListeners);
         }
 
 
@@ -78,6 +84,11 @@ namespace CombatSystem
             {
                 int pick = Random.Range(0, _randomPicks.Count);
                 _characterOrder.Add(_systemCharacters[i],_randomPicks[pick]);
+            }
+
+            foreach (IOnPreparedCharactersOrder listener in CharactersOrdersListeners)
+            {
+                listener.UpdateOrder(_characterOrder);
             }
         }
 
@@ -117,22 +128,6 @@ namespace CombatSystem
         }
 
 
-        public void RemovePreparedCard(CombatSystemCharacter user, int handIndex)
-        {
-            int orderIndex = _characterOrder[user];
-            // Uses list instead or caching through a Dictionary all used cards mainly because
-            // the list normally aren't that big (generally 1 card; being 4 the highest)
-            List<PreparedCard> cards = _onWaitCards[orderIndex]; 
-            for (int i = 0; i < cards.Count; i++)
-            {
-                PreparedCard iCard = cards[i];
-                if (iCard.HandIndex != handIndex) continue;
-
-                cards.RemoveAt(i);
-                break;
-            }
-            
-        }
 
         [Button]
         public void ConfirmPlayAllCards()
@@ -146,14 +141,12 @@ namespace CombatSystem
     public struct PreparedCard
     {
         public readonly ICardData Card;
-        public readonly int HandIndex;
         public readonly CombatSystemCharacter User;
         public readonly CombatSystemCharacter Target;
 
-        public PreparedCard(ICardData card,int handIndex, CombatSystemCharacter user, CombatSystemCharacter target)
+        public PreparedCard(ICardData card, CombatSystemCharacter user, CombatSystemCharacter target)
         {
             Card = card;
-            HandIndex = handIndex;
             User = user;
             Target = target;
         }
@@ -163,14 +156,15 @@ namespace CombatSystem
             Card.DoEffect(User.CharacterCombatStats,Target.CharacterCombatStats,modifier);
         }
 
-        public void DiscardFromHand()
-        {
-            User.Hand.OnUseSubtractCard(HandIndex);
-        }
-
         public void DiscardFromDeck()
         {
             User.Deck.UsedCardDiscardOrReturn(Card);
         }
+    }
+
+    public interface IOnPreparedCharactersOrder
+    {
+        Dictionary<CombatSystemCharacter, int> CharactersOrder { get; }
+        void UpdateOrder(Dictionary<CombatSystemCharacter, int> charactersOrder);
     }
 }

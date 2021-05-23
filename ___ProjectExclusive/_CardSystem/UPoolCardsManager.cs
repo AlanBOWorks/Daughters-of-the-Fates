@@ -8,15 +8,10 @@ using UnityEngine;
 
 namespace CardSystem
 {
-    public class UCardsHandManager : MonoBehaviour, ICombatStartListener, IPlayerDrawsListener
+    public class UPoolCardsManager : MonoBehaviour, ICombatStartListener, IPlayerDrawsListener
     {
-        [Title("Piles")]
-        [SerializeField] private UCardPileBase _drawPile = null;
-
-        [SerializeField,HideInPlayMode] 
-        private SerializedPlayerHand _playerHandHolders = new SerializedPlayerHand();
-        [ShowInInspector,HideInEditorMode]
-        public SerializedPlayerCharacters<UCardPileBase> SerializedPlayerHands { get; private set; }
+        [Title("Piles")] 
+        [SerializeField] private UCardPilesManager pilesManager = null;
 
         [Title("Prefabs")] 
         [SerializeField] private GameObject _cardPrefab = null;
@@ -25,18 +20,15 @@ namespace CardSystem
         [Title("Params")] 
         [SerializeField] private RectTransform _drawCardPoint = null;
 
-        private Dictionary<CombatSystemCharacter, ICardsPile> _charactersHands = null;
 
         private void Awake()
         {
             CardCombatSystemEntity entity
                 = CardCombatSystemSingleton.Instance.Entity;
+            PlayerCombatSystemEntity playerEntity =
+                CardCombatSystemSingleton.Instance.PlayerEntity;
 
-            SerializedPlayerHands = new SerializedPlayerCharacters<UCardPileBase>(_playerHandHolders);
-            _playerHandHolders = null;
-
-
-            entity.CardsHandManager = this;
+            playerEntity.poolCardsManager = this;
             entity.AddOnStartListener(this);
             _instantiationPool = new Stack<UCardHolder>(32);
         }
@@ -58,21 +50,9 @@ namespace CardSystem
                 = CardCombatSystemSingleton.Instance.Entity;
 
             entity.AddOnDrawListener(this);
-            InstantiateDictionaries();
             InstantiatePredictedCards();
             _firstsDrawAmount = 0;
 
-            void InstantiateDictionaries()
-            {
-                int charactersAmount = characters.GetAmountOfPlayersCharacters();
-                _charactersHands = new Dictionary<CombatSystemCharacter, ICardsPile>(charactersAmount);
-                for (var i = 0; i < charactersAmount; i++)
-                {
-                    CombatSystemCharacter character = characters.PlayerCharactersInCombat.Characters[i];
-                    ICardsPile hand = SerializedPlayerHands.Characters[i];
-                    _charactersHands.Add(character,hand);
-                }
-            }
 
             void InstantiatePredictedCards()
             {
@@ -115,55 +95,50 @@ namespace CardSystem
 
         private const int FirstDrawAmount = 2;
         private int _firstsDrawAmount;
-        public void OnDrawCards(CombatSystemCharacter character, Queue<ICardData> cards)
+        public void OnDrawCards(CombatSystemCharacter character, Queue<ICardData> drawQueue)
         {
-            if (_firstsDrawAmount < FirstDrawAmount)
+            /*
+            TODO remove for (skip initial draw)
+            if ( _firstsDrawAmount < FirstDrawAmount)
             {
                 _firstsDrawAmount ++;
                 InitialDraw();
                 return;
-            }
+            }*/
 
             Timing.RunCoroutine(_DoDraws());
             IEnumerator<float> _DoDraws()
             {
-                int cardsCount = cards.Count;
+                int cardsCount = drawQueue.Count;
                 Queue<UCardHolder> cardHolders = new Queue<UCardHolder>(cardsCount);
                 //Draw and show to the player
-                foreach (ICardData cardData in cards)
+                foreach (ICardData cardData in drawQueue)
                 {
                     yield return Timing.WaitForSeconds(DrawCardFrequency);
                     UCardHolder cardHolder = PoolCard();
-                    cardHolder.InjectCard(cardData, true);
-                    _drawPile.Add(cardHolder.gameObject);
+                    cardHolder.InjectCard(character, cardData, true);
                     cardHolders.Enqueue(cardHolder);
-                    _drawPile.UpdatePositions();
-
+                    pilesManager.AddCardToShowPile(cardHolder,true);
                 }
 
                 yield return Timing.WaitForSeconds(ShowDraw.MaxClampAddition(DrawCardFrequency * cardsCount));
 
                 //Puts in the Character's hand
-                ICardsPile hand = _charactersHands[character];
                 foreach (UCardHolder cardHolder in cardHolders)
                 {
-                    _drawPile.Remove(cardHolder.gameObject);
                     yield return Timing.WaitForSeconds(PutHandFrequency);
-                    hand.Add(cardHolder.gameObject);
-                    hand.UpdatePositions();
+                    pilesManager.AddCardToCharactersPile(cardHolder,character,true);
                 }
             }
 
             void InitialDraw()
             {
-                ICardsPile hand = _charactersHands[character];
 
-                foreach (ICardData cardData in cards)
+                foreach (ICardData cardData in drawQueue)
                 {
                     UCardHolder cardHolder = PoolCard();
-                    cardHolder.InjectCard(cardData,true);
-                    hand.Add(cardHolder.gameObject);
-                    hand.UpdatePositions(false);
+                    cardHolder.InjectCard(character,cardData,true);
+                    pilesManager.AddCardToCharactersPile(cardHolder,character);
                 }
             }
 
@@ -171,7 +146,7 @@ namespace CardSystem
         }
 
         [Serializable]
-        private class SerializedPlayerHand : SerializablePlayerCharacters<UCardPileBase>
+        private class SerializedPlayerHand : SerializablePlayerCharacters<UCardPile>
         {}
     }
 }

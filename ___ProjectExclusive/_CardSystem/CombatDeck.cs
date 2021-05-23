@@ -72,6 +72,11 @@ namespace CardSystem
             return generatedDeck;
         }
 
+        public int GetAmountOfCard(ICardData card)
+        {
+            return Deck[card];
+        }
+
         public void AddCard(ICardData card, int amount = 1)
         {
             if(!Deck.ContainsKey(card)) return;

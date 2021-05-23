@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using ___ProjectExclusive.Characters;
+using CombatSystem;
 using UnityEngine;
 
 namespace CardSystem
@@ -14,6 +15,12 @@ namespace CardSystem
 
         CardArchetypeBase.CardArchetype GetArchetype();
 
+    }
+
+    public interface ICardUser
+    {
+        ICardData Card { get; }
+        CombatSystemCharacter User { get; }
     }
 
     public interface ICardEffect
@@ -52,10 +59,14 @@ namespace CardSystem
         void ModifyAmount(ICardData card, int amount);
     }
 
-    public interface ICardsPile
+    public interface IItemPile<in T>
     {
-        void Add(GameObject card, int index = -1);
-        void Remove(GameObject card);
+        /// <param name="animatePosition">Does animation on call (and will do calculations as a consequence).<br></br>
+        /// False is recommendable if there's a lot of additions that can wait to be animated after all is added, then 
+        /// <seealso cref="UpdatePositions"/>can be used to animate/update the positions (and doing the calculations
+        /// just once)</param>
+        void Add(T item, PileAnimation.Type animationType = PileAnimation.Type.None, int index = -1);
+        void Remove(T item);
         void RemoveAt(int index);
         void RemoveAll();
         void UpdatePositions(bool animatePositions = true);

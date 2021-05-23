@@ -20,6 +20,8 @@ namespace CombatSystem
         [ShowInInspector, DisableInEditorMode, DisableInPlayMode]
         private PlayCardsPhase _playCardsPhase;
 
+        public PrepareCardsPhase GetPrepareCardsPhase() => _prepareCardsPhase;
+
         public void Injection(CombatCharactersHolder charactersHolder)
         {
             DrawPhase = new DrawPhase(charactersHolder);

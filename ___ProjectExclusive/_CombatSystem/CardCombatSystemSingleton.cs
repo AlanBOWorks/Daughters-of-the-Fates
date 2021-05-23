@@ -11,11 +11,17 @@ namespace CombatSystem
     public sealed class CardCombatSystemSingleton
     {
         static CardCombatSystemSingleton() { }
-        private CardCombatSystemSingleton() { }
+
+        private CardCombatSystemSingleton()
+        {
+            Entity = new CardCombatSystemEntity();
+            PlayerEntity = new PlayerCombatSystemEntity();
+        }
         public static CardCombatSystemSingleton Instance { get; } = new CardCombatSystemSingleton();
 
-        [SerializeField, HideInEditorMode, HideInPlayMode, HideInInlineEditors, HideDuplicateReferenceBox]
-        public CardCombatSystemEntity Entity = new CardCombatSystemEntity();
+        
+        public CardCombatSystemEntity Entity;
+        public PlayerCombatSystemEntity PlayerEntity;
 
         public static void StartCombat(SCombatEnemiesPreset combatPreset)
         {
@@ -39,11 +45,12 @@ namespace CombatSystem
     {
         [Title("Managers")]
         public CombatCharactersHolder CurrentCharacters = null;
-        public UCardsHandManager CardsHandManager = null;
 
         [Title("Sections")]
         [SerializeField]
         private InCombatTurnSection _inCombatTurnSection = new InCombatTurnSection();
+        public InCombatTurnSection GetCombatSection() => _inCombatTurnSection;
+
         private Queue<IEnumerator<float>> _phaseSections;
 
         private delegate void CombatStarEvent(CombatCharactersHolder characters);
@@ -124,4 +131,12 @@ namespace CombatSystem
         void DoStart(CombatCharactersHolder characters);
     }
 
+
+    public class PlayerCombatSystemEntity
+    {
+        public UCardSelectorsManager cardSelectorsManager = null;
+        public UPoolCardsManager poolCardsManager = null;
+        public UCardPilesManager cardPilesManager = null;
+
+    }
 }

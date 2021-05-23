@@ -24,7 +24,7 @@ namespace CombatSystem
             _stepHandle = Timing.CurrentCoroutine;
 
             //Draw enemies
-            foreach (CombatSystemCharacter character in _combatCharacterHolder.EnemiesInCombat)
+            foreach (CombatSystemCharacter character in _combatCharacterHolder.ListEnemiesInCombat)
             {
                 character.Hand.DrawAllCardPossible();
             }
@@ -46,6 +46,6 @@ namespace CombatSystem
 
     public interface IPlayerDrawsListener
     {
-        void OnDrawCards(CombatSystemCharacter character,Queue<ICardData> cards);
+        void OnDrawCards(CombatSystemCharacter character,Queue<ICardData> drawQueue);
     }
 }

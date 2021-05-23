@@ -9,13 +9,17 @@ namespace ___ProjectExclusive
     public sealed class GameThemeSingleton
     {
         static GameThemeSingleton() { }
-        private GameThemeSingleton() { }
+
+        private GameThemeSingleton()
+        {
+            _entity = new GameThemeEntity();
+        }
         public static GameThemeSingleton Instance { get; } = new GameThemeSingleton();
 
         public ColorThemeEntity ColorTheme => _entity.ColorTheme;
         public IconThemeEntity IconTheme => _entity.IconTheme;
         [SerializeField]
-        private GameThemeEntity _entity = new GameThemeEntity();
+        private GameThemeEntity _entity;
         public GameThemeEntity Entity => _entity;
 
         public void Injection(SGameThemeSingleton variable)
