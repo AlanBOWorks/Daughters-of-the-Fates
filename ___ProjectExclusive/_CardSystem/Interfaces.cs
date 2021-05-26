@@ -14,6 +14,8 @@ namespace CardSystem
         Sprite CardImage { get; }
 
         CardArchetypeBase.CardArchetype GetArchetype();
+        CardTargets.TargetType GetTargetType();
+
 
     }
 
@@ -59,8 +61,20 @@ namespace CardSystem
         void ModifyAmount(ICardData card, int amount);
     }
 
-    public interface IItemPile<in T>
+    public interface ICardPlayRequest
     {
+        void RequestForPlay();
+        bool IsFinishPlaying();
+        void PushPlay();
+
+        void PrepareCard(ICardData card, CombatSystemCharacter target);
+        void RemoveCard(ICardData card);
+    }
+
+    public interface IItemPile<T>
+    {
+        List<T> Items { get; }
+
         /// <param name="animatePosition">Does animation on call (and will do calculations as a consequence).<br></br>
         /// False is recommendable if there's a lot of additions that can wait to be animated after all is added, then 
         /// <seealso cref="UpdatePositions"/>can be used to animate/update the positions (and doing the calculations
@@ -70,6 +84,7 @@ namespace CardSystem
         void RemoveAt(int index);
         void RemoveAll();
         void UpdatePositions(bool animatePositions = true);
+
 
     }
 }

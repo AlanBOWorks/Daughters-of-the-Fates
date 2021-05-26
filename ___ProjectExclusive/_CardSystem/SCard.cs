@@ -16,7 +16,10 @@ namespace CardSystem
         [SerializeField,SuffixLabel("cards Per Use")] private int _cost = -1;
         [SerializeField, SuffixLabel("%")] private float _cardPower = 1;
         [SerializeField] private Sprite _cardImage = null;
-        [SerializeField] private CardArchetypeBase.CardArchetype _archetype = CardArchetypeBase.CardArchetype.Others;
+        [SerializeField] private CardArchetypeBase.CardArchetype _archetype 
+            = CardArchetypeBase.CardArchetype.Others;
+        [SerializeField] private CardTargets.TargetType _targetType
+            = CardTargets.TargetType.Self;
 
         public string CardName => _cardName;
         public string Description => _description;
@@ -24,8 +27,8 @@ namespace CardSystem
         public float CardPower => _cardPower;
         public Sprite CardImage => _cardImage;
         public CardArchetypeBase.CardArchetype GetArchetype() => _archetype;
+        public CardTargets.TargetType GetTargetType() => _targetType;
 
-        
 
         [SerializeField] 
         private SCardEffect[] _serializedEffects = new SCardEffect[1];
@@ -46,7 +49,7 @@ namespace CardSystem
 
         private void OnEnable()
         {
-            if (_cardName.Length < 1)
+            if (_cardName != null && _cardName.Length < 1)
                 _cardName = name;
         }
 
@@ -75,6 +78,18 @@ namespace CardSystem
         }
     }
 
+    public static class CardTargets
+    {
+        [System.Flags]
+        public enum TargetType
+        {
+            Self = 1,
+            Allies = 1 << 1,
+            Enemies = 1 << 2,
+            All = ~0,
+        }
+    }
+
     public abstract class CardArchetypeBase
     {
         /// <summary>
@@ -86,7 +101,7 @@ namespace CardSystem
         /// Also could be used for drop chances for some specific classes so they can receive the most
         /// fitting cards.
         /// </summary>
-        public enum CardArchetype
+        public enum CardArchetype : byte
         {
 
             Attacker = AttackerIndex,

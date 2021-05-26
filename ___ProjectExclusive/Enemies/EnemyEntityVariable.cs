@@ -9,6 +9,7 @@ namespace ___ProjectExclusive.Characters
         menuName = "Variable/Entity/Enemy Character")]
     public class EnemyEntityVariable : CharacterEntityVariableBase
     {
+
         [SerializeField] 
         private CharacterCombatStatsBase _combatStats = new CharacterCombatStatsBase();
         [SerializeField]
@@ -16,7 +17,7 @@ namespace ___ProjectExclusive.Characters
 
         public override CharacterCombatStatsHolder GenerateCombatStats()
         {
-            return new CharacterCombatStatsHolder(
+            return new CharacterCombatStatsHolder(entityName,
                 new CharacterCombatMainStats(_combatStats), 
                 new CharacterBuffStats(), 
                 new CharacterBuffStats());

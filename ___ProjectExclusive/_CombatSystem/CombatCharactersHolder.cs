@@ -74,25 +74,44 @@ namespace CombatSystem
 
     public class CombatSystemCharacter
     {
-        public readonly CharacterCombatStatsHolder CharacterCombatStats;
+        public readonly CharacterCombatStatsHolder Stats;
         public readonly CombatDeck Deck;
         [ShowInInspector]
         public readonly CardsHand Hand;
         public readonly ITurnCombatAnimator CharacterAnimator;
+
+        /// <summary>
+        /// This is a list of one element of this only <see cref="CombatSystemCharacter"/>; It's
+        /// used for selectors that only can target them self without any other character
+        /// </summary>
+        public readonly List<CombatSystemCharacter> SelfAgent;
+        public readonly List<CombatSystemCharacter> Allies;
 
         [ShowInInspector,DisableInPlayMode]
         public CharacterTeam Team { get; private set; }
         [ShowInInspector,DisableInPlayMode]
         public CharacterTeam EnemyTeam { get; private set; }
 
-        public void InjectTeam(CharacterTeam allies) => Team = allies;
+        public void InjectTeam(CharacterTeam allies)
+        {
+            Team = allies;
+            foreach (CombatSystemCharacter character in allies.Members)
+            {
+                if(character != this)
+                    Allies.Add(character);
+            }
+        }
         public void InjectEnemies(CharacterTeam enemies) => EnemyTeam = enemies;
 
+        private const int MaxAmountOfAllies = 4;
         public CombatSystemCharacter(CharacterEntity character)
         {
-            CharacterCombatStats = character.Variable.GenerateCombatStats();
+            SelfAgent = new List<CombatSystemCharacter>(1) {this};
+            Allies = new List<CombatSystemCharacter>(MaxAmountOfAllies);
+
+            Stats = character.Variable.GenerateCombatStats();
             Deck = new CombatDeck(character.Variable.GetDeck().GenerateDeck());
-            Hand = new CardsHand(this,Deck,CharacterCombatStats.MainStats);
+            Hand = new CardsHand(this,Deck,Stats.MainStats);
             CharacterAnimator = character.CombatAnimator;
         }
     }

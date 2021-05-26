@@ -45,6 +45,12 @@ namespace CombatSystem
     {
         [Title("Managers")]
         public CombatCharactersHolder CurrentCharacters = null;
+        public Dictionary<CombatSystemCharacter, int> CharacterRoundOrder { get; private set; }
+        public Queue<CombatSystemCharacter> CharactersOrder { get; private set; }
+
+        public PlayedCardsTracker playedCardsTracker = null;
+
+        public Dictionary<CombatSystemCharacter,ICardPlayRequest> CharacterRequester { get; private set; }
 
         [Title("Sections")]
         [SerializeField]
@@ -77,23 +83,51 @@ namespace CombatSystem
         public void StartCombat(SCombatEnemiesPreset combatPreset)
         {
             // Prepare the Combat
+            Declaration();
             DoInjection();
+            AfterInjectionDeclaration();
             DoEnqueue();
 
 
             // Starts Combat
             TurnManagerSingleton.Instance.Entity.StartTurnSystem(this);
 
-            void DoInjection()
+            void Declaration()
             {
                 CurrentCharacters = new CombatCharactersHolder(
                     PlayerEntitySingleton.Instance.Entity.ControllingCharacters,
                     combatPreset.GetEnemies());
+                int amountOfCharacters = CurrentCharacters.GetAmountOfCharacters();
+                CharacterRoundOrder = new Dictionary<CombatSystemCharacter, int>(
+                    amountOfCharacters);
+                CharactersOrder = new Queue<CombatSystemCharacter>(
+                    amountOfCharacters);
+                CharacterRequester = new Dictionary<CombatSystemCharacter, ICardPlayRequest>(
+                    amountOfCharacters);
+            }
 
+            void DoInjection()
+            {
                 _inCombatTurnSection.Injection(CurrentCharacters);
-
                 OnStart?.Invoke(CurrentCharacters);
             }
+
+            void AfterInjectionDeclaration()
+            {
+
+                foreach (CombatSystemCharacter character in CurrentCharacters.PlayerCharactersInCombat.Characters)
+                {
+                    PlayerPlayCardsRequest cardsRequest = new PlayerPlayCardsRequest(character);
+                    CharacterRequester.Add(character, cardsRequest);
+                }
+
+                foreach (CombatSystemCharacter character in CurrentCharacters.ListEnemiesInCombat)
+                {
+                    AIPlayCardsRequest cardsRequest = new AIPlayCardsRequest(character);
+                    CharacterRequester.Add(character, cardsRequest);
+                }
+            }
+
 
             void DoEnqueue()
             {
@@ -134,9 +168,16 @@ namespace CombatSystem
 
     public class PlayerCombatSystemEntity
     {
+        // this stuff are related to the UI
         public UCardSelectorsManager cardSelectorsManager = null;
         public UPoolCardsManager poolCardsManager = null;
         public UCardPilesManager cardPilesManager = null;
 
+        public CardsStatesManager cardsStatesManager;
+
+        public PlayerCombatSystemEntity()
+        {
+            cardsStatesManager = new CardsStatesManager();
+        }
     }
 }

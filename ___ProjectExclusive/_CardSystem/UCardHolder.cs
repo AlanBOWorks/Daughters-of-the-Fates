@@ -13,7 +13,8 @@ using UnityEngine.UI;
 
 namespace CardSystem
 {
-    public class UCardHolder : MonoBehaviour, ICardInjection, IPointerClickHandler, ICardUser
+    public class UCardHolder : MonoBehaviour, ICardInjection, ICardUser,
+        ICardStateHandlerMono
     {
         [ShowInInspector, HideInEditorMode]
         public CombatSystemCharacter User { get; private set; }
@@ -23,37 +24,52 @@ namespace CardSystem
         [FormerlySerializedAs("_visualFeedback")] [SerializeField,HideInPlayMode]
         private CardVisualsHolder visualsHolder = new CardVisualsHolder();
 
-        public IdleCardStateHandler IdleStateHandler { get; private set; }
-        public CardTypeHandler CardTypeHandler { get; private set; }
-
-        private void Awake()
-        {
-            CardTypeHandler = new CardTypeHandler(this);
-            IdleStateHandler = new IdleCardStateHandler(this);
-        }
+        [Title("State")]
+        [ShowInInspector, HideInEditorMode, DisableInPlayMode]
+        private ICardStateHandler _currentStateHandler;
 
         public void InjectCard(CombatSystemCharacter user, ICardData card, bool isPlayer)
         {
             User = user;
             Card = card;
             visualsHolder.InjectCard(user, card,isPlayer);
+            SwitchStateHandler(CardsStatesManager.HandlerStates.Inactive);
+        }
+        public void SwitchStateHandler(ICardStateHandler handler)
+        {
+            _currentStateHandler = handler;
+            _currentStateHandler.OnSwitchState(this);
+        }
+        private void SwitchStateHandler(CardsStatesManager.HandlerStates target)
+        {
+            CardsStatesManager manager = CardCombatSystemSingleton.Instance.PlayerEntity.cardsStatesManager;
+            _currentStateHandler = manager.GetState(target);
+            _currentStateHandler.OnSwitchState(this);
         }
 
 
-
-        public void OnPointerClick(PointerEventData eventData)
+        public void OnPointerClick(PointerEventData eventData) => OnSubmit();
+        public void OnSubmit(BaseEventData eventData) => OnSubmit();
+        public void OnSubmit()
         {
-            CardStates.States currentState = IdleStateHandler.CurrentState;
-            switch (currentState)
-            {
-                case CardStates.States.Idle:
-                case CardStates.States.Hover:
-                    IdleStateHandler.DoSwitchState(CardStates.States.Selected);
-                    break;
-                default:
-                    IdleStateHandler.DoSwitchState(CardStates.States.Idle);
-                    break;
-            }
+            _currentStateHandler.OnClick(this);
+        }
+
+        public void OnCancel(BaseEventData eventData) => OnCancel();
+        public void OnCancel()
+        {
+            _currentStateHandler.OnCancel(this);
+        }
+
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            _currentStateHandler.OnPointerEnter(this);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            _currentStateHandler.OnPointerExit(this);
         }
 
 
@@ -63,114 +79,7 @@ namespace CardSystem
     {
         void InjectCard(CombatSystemCharacter user, ICardData card, bool isPlayer);
     }
-    
-    /// <summary>
-    /// Can be a Card in the player's hand (UI), prepared card (UI) or something special that can
-    /// be interacted with
-    /// </summary>
-    public interface ICardStates
-    {
-        void DoSwitchState(CardStates.States targetState);
-    }
 
-    public static class CardStates
-    {
-        public enum States
-        {
-            Idle,
-            Hover,
-            Selected,
-            Prepared
-        }
-    }
-
-    public class IdleCardStateHandler : ICardStates
-    {
-        public readonly UCardHolder CardHolder;
-        public CardStates.States CurrentState;
-
-        public IdleCardStateHandler(UCardHolder cardHolder)
-        {
-            CardHolder = cardHolder;
-        }
-
-
-        public void DoSwitchState(CardStates.States targetState)
-        {
-            if(targetState == CurrentState) return;
-
-            switch (targetState)
-            {
-                
-                case CardStates.States.Idle:
-                    RemoveSelectedState();
-                    break;
-                case CardStates.States.Hover:
-                    //TODO animation hover
-                    break;
-                case CardStates.States.Selected:
-                    CallTargetHandler();
-                    break;
-                case CardStates.States.Prepared:
-                    PushCardToPreparedHand();
-                    break;
-            }
-            CurrentState = targetState;
-        }
-
-        private void CallTargetHandler()
-        {
-            CardHolder.CardTypeHandler.CallTargetHandler();
-            CurrentState = CardStates.States.Selected;
-        }
-
-        private void PushCardToPreparedHand()
-        {
-            //TODO Push card animation
-            //TODO add card in pile of prepared cards (UI)
-            CurrentState = CardStates.States.Idle;
-        }
-
-        private void RemoveSelectedState()
-        {
-            if (CurrentState == CardStates.States.Prepared)
-            {
-                //TODO removing selection (animation)
-                CardHolder.User.Hand.HandPusher.RemovePreparedCard(CardHolder);
-            }
-            CurrentState = CardStates.States.Idle;
-
-        }
-    }
-
-    public class CardTypeHandler
-    {
-
-        private readonly UCardHolder _cardHolder;
-
-        public CardTypeHandler(UCardHolder cardHolder)
-        {
-            _cardHolder = cardHolder;
-        }
-
-        public void CallTargetHandler()
-        {
-            //TODO check if card is singleTarget
-            bool isSingleTarget = false;
-            if (isSingleTarget)
-            {
-
-                return;
-            }
-
-            //TODO else
-            ICardTargetHandler targetHandler =
-                CardCombatSystemSingleton.Instance.PlayerEntity.cardSelectorsManager;
-            targetHandler.EnableSelectors(_cardHolder.User, _cardHolder.Card, _cardHolder.IdleStateHandler);
-            //TODO do animation
-        }
-
-    }
 
     [Serializable]
     public class CardVisualsHolder : ISerializationCallbackReceiver, ICardInjection

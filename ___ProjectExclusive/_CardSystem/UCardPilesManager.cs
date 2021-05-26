@@ -24,7 +24,7 @@ namespace CardSystem
         private UCardPile showDrawPile = null;
 
         private Dictionary<UCardHolder, IItemPile<UCardHolder>> _pileDictionary;
-        private Dictionary<CombatSystemCharacter, IItemPile<UCardHolder>> _characterPiles;
+        public Dictionary<CombatSystemCharacter, IItemPile<UCardHolder>> characterPiles = null;
 
         private void HandleCard(UCardHolder card, IItemPile<UCardHolder> targetPile,
             PileAnimation.Type animationType)
@@ -60,7 +60,7 @@ namespace CardSystem
 
         public void AddCardToCharactersPile(UCardHolder card, CombatSystemCharacter character, bool animated = false)
         {
-            IItemPile<UCardHolder> targetPile = _characterPiles[character];
+            IItemPile<UCardHolder> targetPile = characterPiles[character];
             HandleCard(card,targetPile,animated);
         }
 
@@ -95,7 +95,7 @@ namespace CardSystem
         {
             usedPiles.DoStart(characters);
             int amountOfCharacters = characters.GetAmountOfCharacters();
-            _characterPiles 
+            characterPiles 
                 = new Dictionary<CombatSystemCharacter, IItemPile<UCardHolder>>(amountOfCharacters);
             CombatSystemCharacter[] playersCharacters 
                 = characters.PlayerCharactersInCombat.Characters;
@@ -104,7 +104,7 @@ namespace CardSystem
 
             for (int i = 0; i < playersCharacters.Length; i++)
             {
-                _characterPiles.Add(playersCharacters[i],playersPiles[i]);
+                characterPiles.Add(playersCharacters[i],playersPiles[i]);
             }
 
 

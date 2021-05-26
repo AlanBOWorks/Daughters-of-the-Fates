@@ -8,7 +8,7 @@ using UnityEngine.EventSystems;
 
 namespace CardSystem
 {
-    public class UCardSelectorsManager : MonoBehaviour, ICombatStartListener, ICardTargetHandler, ICardUser
+    public class UCardSelectorsManager : MonoBehaviour, ICombatStartListener, ICardTargetHandler
     {
        
         private Dictionary<CombatSystemCharacter,UCardTargetSelector> _selectors;
@@ -64,36 +64,37 @@ namespace CardSystem
         }
 
         [ShowInInspector, DisableInEditorMode, DisableInPlayMode]
-        public CombatSystemCharacter User { get; private set; }
+        public CombatSystemCharacter CurrentUser { get; private set; }
         [ShowInInspector,DisableInEditorMode,DisableInPlayMode]
-        public ICardData Card { get; private set; }
+        public UCardHolder CurrentCard { get; private set; }
 
         [ShowInInspector,DisableInEditorMode,DisableInPlayMode]
-        public ICardStates InteractingCard { get; private set; }
+        public ICardStateHandler InteractingCard { get; private set; }
 
         public void PushCard(CombatSystemCharacter target)
         {
-            if (User != null && Card != null)
+            if (CurrentUser != null && CurrentCard != null)
             {
-                User.Hand.HandPusher.PrepareCardForPlay(this,target);
-                InteractingCard.DoSwitchState(CardStates.States.Prepared);
+                CardCombatSystemEntity entity = CardCombatSystemSingleton.Instance.Entity;
+                ICardPlayRequest requester = entity.CharacterRequester[CurrentUser];
+                requester.PrepareCard(CurrentCard.Card,target);
                 DisableSelectors();
                 RemoveSelected();
             }
         }
 
-        public void EnableSelectors(CombatSystemCharacter user, ICardData card, ICardStates callback)
+        public void EnableSelectors(CombatSystemCharacter user, UCardHolder card, ICardStateHandler callback)
         {
-            if (Card != null || User != null || InteractingCard != null)
+            if (CurrentCard != null || CurrentUser != null || InteractingCard != null)
             {
                 DisableSelectors();
                 RemoveSelected();
             }
 
-            User = user;
-            Card = card;
+            CurrentUser = user;
+            CurrentCard = card;
             InteractingCard = callback;
-            List<CombatSystemCharacter> targets = CharacterTeam.GetTarget(user, card);
+            List<CombatSystemCharacter> targets = CardUtils.GetCardsTarget(user,card.Card);
             foreach (CombatSystemCharacter target in targets)
             {
                 _selectors[target].GameObjectEnabled = true;
@@ -110,9 +111,9 @@ namespace CardSystem
 
         public void RemoveSelected()
         {
-            User = null;
-            Card = null;
-            InteractingCard.DoSwitchState(CardStates.States.Idle);
+            InteractingCard.OnCancel(CurrentCard);
+            CurrentUser = null;
+            CurrentCard = null;
             InteractingCard = null;
         }
 
@@ -120,7 +121,7 @@ namespace CardSystem
 
     public interface ICardTargetHandler
     {
-        void EnableSelectors(CombatSystemCharacter user, ICardData card, ICardStates callback);
+        void EnableSelectors(CombatSystemCharacter user, UCardHolder card, ICardStateHandler callback);
         void DisableSelectors();
     }
 

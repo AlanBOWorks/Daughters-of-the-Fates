@@ -6,11 +6,17 @@ using SharedLibrary;
 using Sirenix.OdinInspector;
 using StylizedAnimator;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace ___ProjectExclusive.Characters
 {
     public abstract class CharacterEntityVariableBase : ScriptableVariable<CharacterEntity>, ISerializationCallbackReceiver
     {
+        [Title("Data")]
+        [SerializeField]
+        protected string entityName = "NULL";
+
+
         public abstract CharacterCombatStatsHolder GenerateCombatStats();
         public abstract IDeckCollection GetDeck();
 

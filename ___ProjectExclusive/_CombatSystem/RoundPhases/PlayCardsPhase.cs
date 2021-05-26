@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using CardSystem;
 using MEC;
 using TurnSystem;
@@ -8,28 +9,30 @@ namespace CombatSystem
 {
     public class PlayCardsPhase : ITurnPhase
     {
-        private readonly PrepareCardsPhase _preparedCards;
+        private readonly PlayedCardsTracker _playedCardsTracker;
+        private readonly Queue<CombatSystemCharacter> _charactersOrder;
+        private readonly Dictionary<CombatSystemCharacter, ICardPlayRequest> _characterRequests;
 
-        private List<PreparedCard>[] GetPreparedCards() => _preparedCards.PreparedCards;
-
-        public PlayCardsPhase(PrepareCardsPhase preparationCards)
+        public PlayCardsPhase(CombatCharactersHolder charactersHolder)
         {
-            _preparedCards = preparationCards;
+            CardCombatSystemEntity entity = CardCombatSystemSingleton.Instance.Entity;
+            _playedCardsTracker = entity.playedCardsTracker;
+            
+            _charactersOrder = entity.CharactersOrder;
+            _characterRequests = entity.CharacterRequester;
         }
 
+        private Func<bool> _isPlayCardsFinish;
         public IEnumerator<float> _DoStep()
         {
-            List<PreparedCard>[] currentPlayingCard = GetPreparedCards();
-
-            for (int i = 0; i < currentPlayingCard.Length; i++)
+            foreach (CombatSystemCharacter character in _charactersOrder)
             {
-                for (int j = 0; j < currentPlayingCard[i].Count; j++)
-                {
-                    PreparedCard card = currentPlayingCard[i][j];
-                    card.DoEffect();
-                    yield return Timing.WaitForOneFrame; //TODO wait for animations
-                    card.DiscardFromDeck();
-                }
+                Debug.Log($"Requesting: {character.Stats.CharacterName}");
+                ICardPlayRequest request = _characterRequests[character];
+                request.RequestForPlay();
+                _isPlayCardsFinish = request.IsFinishPlaying;
+
+                yield return Timing.WaitUntilTrue(_isPlayCardsFinish);
             }
         }
     }

@@ -20,7 +20,6 @@ namespace CardSystem
         public readonly ICardStats CardStats;
 
         public readonly CardsDrawHandler DrawHandler;
-        public readonly CardsHandPusher HandPusher;
 
         public CardsHand(CombatSystemCharacter user, CombatDeck usingDeck, ICardStats cardStats)
         {
@@ -32,7 +31,6 @@ namespace CardSystem
             this.AmountOfCards = new Dictionary<ICardData, int>(cardStats.HandSize);
 
             DrawHandler = new CardsDrawHandler(this);
-            HandPusher = new CardsHandPusher(this);
         }
 
         public int GetAmountInHand(ICardData card) => AmountOfCards[card];
@@ -78,52 +76,4 @@ namespace CardSystem
         }
     }
 
-    public class CardsHandPusher
-    {
-        private readonly CardsHand _hand;
-
-        private readonly Dictionary<ICardUser, CombatSystemCharacter> _chosenCards;
-        private const int PredictedAmountOfCards = 4;
-
-        public CardsHandPusher(CardsHand hand)
-        {
-            _hand = hand;
-            _chosenCards = new Dictionary<ICardUser, CombatSystemCharacter>(PredictedAmountOfCards);
-        }
-
-
-        public void PrepareCardForPlay(ICardUser card, CombatSystemCharacter target)
-        {
-            _chosenCards.Add(card, target);
-        }
-
-        public void RemovePreparedCard(ICardUser card)
-        {
-            _chosenCards.Remove(card);
-        }
-
-        [Button, HideInEditorMode]
-        public void PushCardToPreparedCardsPhase()
-        {
-            Dictionary<ICardData, int> amountOfCards = _hand.AmountOfCards;
-            PrepareCardsPhase prepareCardsPhase =
-                CardCombatSystemSingleton.Instance.Entity.GetCombatSection().GetPrepareCardsPhase();
-            foreach (KeyValuePair<ICardUser, CombatSystemCharacter> chosenCard in _chosenCards)
-            {
-                ICardData card = chosenCard.Key.Card;
-                CombatSystemCharacter user = chosenCard.Key.User;
-                prepareCardsPhase.PrepareCard(new PreparedCard(
-                    card,
-                    user,
-                    chosenCard.Value));
-
-                amountOfCards[card]--;
-                if (amountOfCards[card] <= 0)
-                {
-                    amountOfCards.Remove(card);
-                }
-            }
-            _chosenCards.Clear();
-        }
-    }
 }

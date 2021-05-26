@@ -93,18 +93,17 @@ namespace CardSystem
         [SuffixLabel("Seconds")]
         public SRange ShowDraw = new SRange(.6f,1.6f);
 
-        private const int FirstDrawAmount = 2;
+        private const int FirstDrawCharactersAmount = 2;
         private int _firstsDrawAmount;
         public void OnDrawCards(CombatSystemCharacter character, Queue<ICardData> drawQueue)
         {
-            /*
-            TODO remove for (skip initial draw)
-            if ( _firstsDrawAmount < FirstDrawAmount)
+            
+            if ( _firstsDrawAmount < FirstDrawCharactersAmount)
             {
                 _firstsDrawAmount ++;
                 InitialDraw();
                 return;
-            }*/
+            }
 
             Timing.RunCoroutine(_DoDraws());
             IEnumerator<float> _DoDraws()

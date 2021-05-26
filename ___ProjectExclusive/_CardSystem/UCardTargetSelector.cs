@@ -7,11 +7,11 @@ namespace CardSystem
 {
     public class UCardTargetSelector : MonoBehaviour, IPointerClickHandler
     {
-        private UCardSelectorsManager _handler;
+        private UCardSelectorsManager _manager;
         [ShowInInspector,DisableInEditorMode,DisableInPlayMode]
         protected CombatSystemCharacter SelectingCharacter { get; private set; }
         public void Injection(CombatSystemCharacter selectionCharacter) => SelectingCharacter = selectionCharacter;
-        public void Injection(UCardSelectorsManager handler) => _handler = handler;
+        public void Injection(UCardSelectorsManager manager) => _manager = manager;
 
 
         public bool GameObjectEnabled
@@ -29,7 +29,7 @@ namespace CardSystem
         private void DoPushCard()
         {
             GameObjectEnabled = false;
-            _handler.PushCard(SelectingCharacter);
+            _manager.PushCard(SelectingCharacter);
         }
     }
 }

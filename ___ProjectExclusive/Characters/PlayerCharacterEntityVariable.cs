@@ -11,9 +11,7 @@ namespace _Player
     public class PlayerCharacterEntityVariable : CharacterEntityVariableBase,
         IAgentName
     {
-        [Title("Data")] 
-        [SerializeField] private string _characterName = "NULL";
-
+        
 
         [Title("Variables")]
         [SerializeField] private SPlayerCharacterCombatStatsVariable _combatStatsVariable = null;
@@ -28,7 +26,7 @@ namespace _Player
         }
 
 
-        public string GetAgentName() => _characterName;
+        public string GetAgentName() => entityName;
 
         public SPlayerCharacterCombatStatsVariable GetCombatStats() => _combatStatsVariable;
 
@@ -36,7 +34,8 @@ namespace _Player
         {
             CharacterCombatMainStats mainStats = new CharacterCombatMainStats(
                 _combatStatsVariable.BaseStats(), _combatStatsVariable.CharacterAffinities(), _combatStatsVariable);
-            return new CharacterCombatStatsHolder(mainStats,
+            return new CharacterCombatStatsHolder(entityName,
+                mainStats,
                 new CharacterBuffStats(), 
                 new CharacterBuffStats());
         }

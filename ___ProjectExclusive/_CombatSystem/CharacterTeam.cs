@@ -16,25 +16,15 @@ namespace CombatSystem
 
         public CharacterTeam EnemyTeam;
 
-
-
-        public static List<CombatSystemCharacter> GetTarget(CombatSystemCharacter user, CardArchetypeBase.CardArchetype archetype)
+        public void RemoveMember(CombatSystemCharacter member)
         {
-            //TODO if(!multiTarget)
-            switch (archetype)
+            if(!Members.Contains(member)) return;
+            Members.Remove(member);
+            foreach (CombatSystemCharacter character in Members)
             {
-                default:
-                case CardArchetypeBase.CardArchetype.Buffer:
-                case CardArchetypeBase.CardArchetype.Protector:
-                    return user.Team.Members;
-                case CardArchetypeBase.CardArchetype.Attacker:
-                    return user.EnemyTeam.Members;
-                
+                character.Allies.Remove(member);
             }
         }
-
-        public static List<CombatSystemCharacter> GetTarget(CombatSystemCharacter user, ICardData card) =>
-            GetTarget(user, card.GetArchetype());
 
     }
 

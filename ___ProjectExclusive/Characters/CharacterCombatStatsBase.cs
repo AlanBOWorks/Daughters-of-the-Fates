@@ -165,11 +165,6 @@ namespace ___ProjectExclusive.Characters
             HarmonyAmount = 0;
         }
 
-        public CharacterCombatStatsHolder GenerateHolder()
-        {
-            return new CharacterCombatStatsHolder(this,new CharacterBuffStats(), new CharacterBuffStats());
-        }
-
         public void OnBeforeSerialize()
         {
             
@@ -183,16 +178,21 @@ namespace ___ProjectExclusive.Characters
 
     public class CharacterCombatStatsHolder
     {
+        public string CharacterName;
         public readonly ICharacterCombatStats MainStats;
         public readonly CharacterBuffStats BuffStats;
         public readonly CharacterBuffStats BurstStats;
 
-        public CharacterCombatStatsHolder(ICharacterCombatStats mainStats, CharacterBuffStats buffStats, CharacterBuffStats burstStats)
+        public CharacterCombatStatsHolder(string characterName,
+            ICharacterCombatStats mainStats, CharacterBuffStats buffStats,
+            CharacterBuffStats burstStats)
         {
+            CharacterName = characterName;
             MainStats = mainStats;
             BuffStats = buffStats;
             BurstStats = burstStats;
         }
+
     }
 
     public interface ICharacterUpgradable
