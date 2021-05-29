@@ -82,6 +82,9 @@ namespace CombatSystem
         [Button,DisableInEditorMode]
         public void StartCombat(SCombatEnemiesPreset combatPreset)
         {
+            PlayerCombatSystemEntity playerEntity = CardCombatSystemSingleton.Instance.PlayerEntity;
+
+
             // Prepare the Combat
             Declaration();
             DoInjection();
@@ -114,6 +117,8 @@ namespace CombatSystem
 
             void AfterInjectionDeclaration()
             {
+                playerEntity.CharacterEntityDictionary
+                    = new CharacterEntityDictionary(CurrentCharacters.PlayerCharactersInCombat);
 
                 foreach (CombatSystemCharacter character in CurrentCharacters.PlayerCharactersInCombat.Characters)
                 {
@@ -174,10 +179,43 @@ namespace CombatSystem
         public UCardPilesManager cardPilesManager = null;
 
         public CardsStatesManager cardsStatesManager;
+        public CharacterEntityDictionary CharacterEntityDictionary = null;
 
         public PlayerCombatSystemEntity()
         {
             cardsStatesManager = new CardsStatesManager();
         }
+    }
+
+    public class CharacterEntityDictionary : Dictionary<CombatSystemCharacter, PlayerCharacterEntity>
+    {
+        public CharacterEntityDictionary(SerializedPlayerCharacters<CombatSystemCharacter> users)
+            : base(users.GetCharacterAmount())
+        {
+            foreach (CombatSystemCharacter character in users.Characters)
+            {
+                PlayerCharacterEntity entity = new PlayerCharacterEntity(character);
+                Add(character, entity);
+            }
+        }
+    }
+
+    public class PlayerCharacterEntity
+    {
+        public readonly IItemPile<UCardHolder> HandPile;
+        public readonly CharacterCardStatusHolder StatusHolder;
+        public readonly ActiveCardsStatusHandler StatusHandler;
+
+        public PlayerCharacterEntity(CombatSystemCharacter character)
+        {
+            PlayerCombatSystemEntity playerEntity = CardCombatSystemSingleton.Instance.PlayerEntity;
+
+            StatusHolder = new CharacterCardStatusHolder(character);
+            StatusHandler = new ActiveCardsStatusHandler(StatusHolder);
+
+            HandPile = playerEntity.cardPilesManager.characterPiles[character];
+        }
+
+
     }
 }

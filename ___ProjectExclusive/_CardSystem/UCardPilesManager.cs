@@ -26,7 +26,7 @@ namespace CardSystem
         private Dictionary<UCardHolder, IItemPile<UCardHolder>> _pileDictionary;
         public Dictionary<CombatSystemCharacter, IItemPile<UCardHolder>> characterPiles = null;
 
-        private void HandleCard(UCardHolder card, IItemPile<UCardHolder> targetPile,
+        private void HandleCard(UCardHolder card, IItemPile<UCardHolder> targetPile, CombatSystemCharacter character,
             PileAnimation.Type animationType)
         {
             if (_pileDictionary.ContainsKey(card))
@@ -41,34 +41,38 @@ namespace CardSystem
                 _pileDictionary.Add(card, targetPile);
             }
             targetPile.Add(card, animationType);
+
+            if(character is null) return;
+            IItemPile<UCardHolder> characterPile = characterPiles[character];
+            characterPile.UpdatePositions(animationType == PileAnimation.Type.Animated);
         }
 
-        private void HandleCard(UCardHolder card, IItemPile<UCardHolder> targetPile,
+        private void HandleCard(UCardHolder card, IItemPile<UCardHolder> targetPile, CombatSystemCharacter character,
             bool animated = false)
         {
             var targetAnimation = PileAnimation.GetUpdateType(animated);
 
-            HandleCard(card,targetPile,targetAnimation);
+            HandleCard(card,targetPile,character,targetAnimation);
         }
-
+        
 
         public void AddCardToShowPile(UCardHolder card, bool animated = false)
         {
             IItemPile<UCardHolder> targetPile = showDrawPile;
-            HandleCard(card,targetPile,animated);
+            HandleCard(card,targetPile,null,animated);
         }
 
         public void AddCardToCharactersPile(UCardHolder card, CombatSystemCharacter character, bool animated = false)
         {
             IItemPile<UCardHolder> targetPile = characterPiles[character];
-            HandleCard(card,targetPile,animated);
+            HandleCard(card,targetPile, character, animated);
         }
 
         public void AddCardToPreparation(UCardHolder card, CombatSystemCharacter character, 
             PileAnimation.Type animationType)
         {
             IItemPile<UCardHolder> targetPile = usedPiles.GetPreparationPile(character);
-            HandleCard(card, targetPile, animationType);
+            HandleCard(card, targetPile,character, animationType);
         }
 
         public void TransferPreparedPileToPrevious()
@@ -89,6 +93,8 @@ namespace CardSystem
 
             SerializedPlayerHands = new SerializedPlayerHandPiles(playerHand);
             playerHand = null;
+
+
         }
 
         public void DoStart(CombatCharactersHolder characters)
@@ -121,9 +127,10 @@ namespace CardSystem
 
 
     [Serializable]
-    public class CardUsedPiles : ICombatStartListener, IOnPreparedCharactersOrder
+    public class CardUsedPiles : ICombatStartListener
     {
-        public Dictionary<CombatSystemCharacter, int> CharactersOrder { get; private set; }
+        public Dictionary<CombatSystemCharacter, int> CharactersOrder =>
+            CardCombatSystemSingleton.Instance.Entity.CharacterRoundOrder;
 
         [Title("Params")]
         [SerializeField]
@@ -173,10 +180,6 @@ namespace CardSystem
             }
         }
 
-        public void UpdateOrder(Dictionary<CombatSystemCharacter, int> charactersOrder)
-        {
-            CharactersOrder = charactersOrder;
-        }
 
         [Serializable]
         public struct UsedPile

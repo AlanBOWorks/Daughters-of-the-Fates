@@ -11,6 +11,12 @@ namespace CombatSystem
         T Support { get; }
     }
 
+    public static class PlayerCharacters
+    {
+        public const int VanguardIndex = 0;
+        public const int SupportIndex = VanguardIndex + 1;
+        public const int CharactersAmount = SupportIndex + 1;
+    }
 
     [Serializable]
     public class SerializablePlayerCharacters<T> : IPlayerCharacter<T>
@@ -21,19 +27,15 @@ namespace CombatSystem
         [SerializeField] private T _support;
         public T Support => _support;
 
-
-        public const int VanguardIndex = 0;
-        public const int SupportIndex = VanguardIndex + 1;
-        public const int CharactersAmount = SupportIndex + 1;
     }
 
     public class SerializedPlayerCharacters<T> : IPlayerCharacter<T>
     {
         public readonly T[] Characters;
 
-        public const int VanguardIndex = SerializablePlayerCharacters<T>.VanguardIndex;
-        public const int SupportIndex = SerializablePlayerCharacters<T>.SupportIndex;
-        public const int CharactersAmount = SerializablePlayerCharacters<T>.CharactersAmount;
+        public const int VanguardIndex = PlayerCharacters.VanguardIndex;
+        public const int SupportIndex = PlayerCharacters.SupportIndex;
+        public const int CharactersAmount = PlayerCharacters.CharactersAmount;
 
         public int GetCharacterAmount() => CharactersAmount;
 

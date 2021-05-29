@@ -11,7 +11,6 @@ namespace CardSystem
         private readonly ICardStateHandler[] _handlers;
 
         //This states can switch between each other, but inactive can only be switched by other meanings
-    //TODO solve the multiselectionable cards (to reset to Idle)
         public ICardStateHandler IdleState => _handlers[IdleHandlerIndex];
         public ICardStateHandler TargetState => _handlers[TargetHandlerIndex];
         public ICardStateHandler SelectedState => _handlers[SelectedHandlerIndex];
@@ -50,6 +49,12 @@ namespace CardSystem
         {
             return _handlers[(int)targetStates];
         }
+
+        public static ICardStateHandler GetStateFromSingleton(HandlerStates targetStates)
+        {
+            CardsStatesManager manager = CardCombatSystemSingleton.Instance.PlayerEntity.cardsStatesManager;
+            return manager.GetState(targetStates);
+        }
     }
 
     public interface ICardStateHandler
@@ -57,6 +62,8 @@ namespace CardSystem
         void OnSwitchState(UCardHolder onHolder);
         void OnClick(UCardHolder onHolder);
         void OnCancel(UCardHolder onHolder);
+
+        void OnSubmit(UCardHolder onHolder);
 
         void OnPointerEnter(UCardHolder onHolder);
         void OnPointerExit(UCardHolder onHolder);
@@ -76,37 +83,29 @@ namespace CardSystem
             this.manager = manager;
         }
 
-        public virtual void OnSwitchState(UCardHolder holder)
-        {
-        }
+        public virtual void OnSwitchState(UCardHolder onHolder)
+        {}
 
         public virtual void OnPointerEnter(UCardHolder onHolder)
-        {
-        }
+        {}
 
         public virtual void OnPointerExit(UCardHolder onHolder)
-        {
-        }
+        {}
 
         public virtual void OnClick(UCardHolder onHolder)
-        {
-        }
-       
+        {}
+
         public virtual void OnCancel(UCardHolder onHolder)
-        {
-        }
+        {}
+
+        public virtual void OnSubmit(UCardHolder onHolder) 
+        {}
+
+
     }
 
     public class IdleCardState : CardStateBase
     {
-        public override void OnClick(UCardHolder onHolder)
-        {
-            ICardTargetHandler targetHandler =
-                CardCombatSystemSingleton.Instance.PlayerEntity.cardSelectorsManager;
-            targetHandler.EnableSelectors(onHolder.User, onHolder,this);
-            onHolder.SwitchStateHandler(base.manager.TargetState);
-        }
-
         public IdleCardState(CardsStatesManager manager) : base(manager)
         {
         }
@@ -115,6 +114,13 @@ namespace CardSystem
 
     public class TargetModeCardState : CardStateBase
     {
+        public override void OnSwitchState(UCardHolder onHolder)
+        {
+            ICardTargetHandler targetHandler =
+                CardCombatSystemSingleton.Instance.PlayerEntity.cardSelectorsManager;
+            targetHandler.EnableSelectors(onHolder.User, onHolder, this);
+        }
+
         public override void OnClick(UCardHolder onHolder)
         {
             OnCancel(onHolder);
@@ -125,7 +131,6 @@ namespace CardSystem
             UCardSelectorsManager selectorsManager =
                 CardCombatSystemSingleton.Instance.PlayerEntity.cardSelectorsManager;
             selectorsManager.RemoveSelected();
-            onHolder.SwitchStateHandler(manager.IdleState);
         }
 
         public TargetModeCardState(CardsStatesManager manager) : base(manager)
@@ -138,11 +143,6 @@ namespace CardSystem
         public override void OnClick(UCardHolder onHolder)
         {
             OnCancel(onHolder);
-        }
-
-        public override void OnCancel(UCardHolder onHolder)
-        {
-            onHolder.SwitchStateHandler(manager.IdleState);
         }
 
         public SelectedCardStateHandler(CardsStatesManager manager) : base(manager)

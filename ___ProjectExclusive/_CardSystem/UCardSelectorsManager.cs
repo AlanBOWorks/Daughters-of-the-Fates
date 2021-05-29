@@ -63,6 +63,7 @@ namespace CardSystem
             }
         }
 
+        [Title("Debugging")]
         [ShowInInspector, DisableInEditorMode, DisableInPlayMode]
         public CombatSystemCharacter CurrentUser { get; private set; }
         [ShowInInspector,DisableInEditorMode,DisableInPlayMode]
@@ -78,6 +79,7 @@ namespace CardSystem
                 CardCombatSystemEntity entity = CardCombatSystemSingleton.Instance.Entity;
                 ICardPlayRequest requester = entity.CharacterRequester[CurrentUser];
                 requester.PrepareCard(CurrentCard.Card,target);
+                CurrentCard.CurrentStateHandler.OnSubmit(CurrentCard);
                 DisableSelectors();
                 RemoveSelected();
             }
@@ -111,7 +113,6 @@ namespace CardSystem
 
         public void RemoveSelected()
         {
-            InteractingCard.OnCancel(CurrentCard);
             CurrentUser = null;
             CurrentCard = null;
             InteractingCard = null;

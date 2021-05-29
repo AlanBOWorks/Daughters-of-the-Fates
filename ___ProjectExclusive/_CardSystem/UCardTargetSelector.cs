@@ -7,6 +7,7 @@ namespace CardSystem
 {
     public class UCardTargetSelector : MonoBehaviour, IPointerClickHandler
     {
+        [ShowInInspector,DisableInPlayMode,DisableInEditorMode]
         private UCardSelectorsManager _manager;
         [ShowInInspector,DisableInEditorMode,DisableInPlayMode]
         protected CombatSystemCharacter SelectingCharacter { get; private set; }
@@ -23,6 +24,7 @@ namespace CardSystem
         {
             //TODO do animation of click
             DoPushCard();
+            gameObject.SetActive(false);
         }
 
         [Button,HideInEditorMode]

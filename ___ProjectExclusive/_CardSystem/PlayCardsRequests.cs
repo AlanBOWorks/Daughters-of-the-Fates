@@ -9,7 +9,7 @@ namespace CardSystem
     public abstract class PlayCardsRequest : ICardPlayRequest
     {
         protected readonly CombatSystemCharacter user;
-        protected readonly Dictionary<ICardData, CombatSystemCharacter> chosenCards;
+        protected readonly List<PreparedCard> chosenCards;
         private const int PredictedMaxCards = 4;
         private bool _isFinish;
         public int maxCardPerPlay;
@@ -17,7 +17,7 @@ namespace CardSystem
         protected PlayCardsRequest(CombatSystemCharacter character)
         {
             user = character;
-            chosenCards = new Dictionary<ICardData, CombatSystemCharacter>(PredictedMaxCards);
+            chosenCards = new List<PreparedCard>(PredictedMaxCards);
             maxCardPerPlay = 1;
         }
 
@@ -43,58 +43,55 @@ namespace CardSystem
         {
             CardCombatSystemEntity entity = CardCombatSystemSingleton.Instance.Entity;
             PlayedCardsTracker tracker = entity.playedCardsTracker;
-            foreach (KeyValuePair<ICardData, CombatSystemCharacter> chosenCard in chosenCards)
+            foreach (PreparedCard chosenCard in chosenCards)
             {
-                PreparedCard preparedCard = new PreparedCard(
-                    chosenCard.Key, user, chosenCard.Value);
-                tracker.AddToPlayed(preparedCard);
+                tracker.AddToPlayed(chosenCard);
             }
         }
 
         public void PrepareCard(ICardData card, CombatSystemCharacter target)
         {
-            chosenCards.Add(card, target);
+            PreparedCard preparedCard = new PreparedCard(card, user,target);
+            chosenCards.Add(preparedCard);
         }
 
         public void RemoveCard(ICardData card)
         {
-            chosenCards.Remove(card);
+            for (int i = 0; i < chosenCards.Count; i++)
+            {
+                if (card != chosenCards[i].Card) continue;
+                chosenCards.RemoveAt(i);
+                break;
+            }
         }
+
+        
     }
 
     public class PlayerPlayCardsRequest : PlayCardsRequest
     {
-
+        private readonly PlayerCharacterEntity _characterEntity;
         public PlayerPlayCardsRequest(CombatSystemCharacter character) : base(character)
         {
-
-            UCardPilesManager handPilesManager =
-                CardCombatSystemSingleton.Instance.PlayerEntity.cardPilesManager;
-            _handPile = handPilesManager.characterPiles[character];
+            PlayerCombatSystemEntity entity=
+                CardCombatSystemSingleton.Instance.PlayerEntity;
+            _characterEntity = entity.CharacterEntityDictionary[character];
 
         }
 
-        private readonly IItemPile<UCardHolder> _handPile;
         protected override void DoRequestForPlay()
         {
-            // Initially all cards are Inactive so the player can't play cards before hand.
-            SwitchPileState(CardsStatesManager.HandlerStates.Idle);
+            _characterEntity.StatusHandler.EnableAllCards();
         } 
         public override void FinishRequests()
         {
             base.FinishRequests();
-            SwitchPileState(CardsStatesManager.HandlerStates.Inactive);
+            DisableCards();
         }
 
-        private void SwitchPileState(CardsStatesManager.HandlerStates targetState)
+        private void DisableCards()
         {
-            CardsStatesManager manager = CardCombatSystemSingleton.Instance.PlayerEntity.cardsStatesManager;
-            ICardStateHandler targetHandler = manager.GetState(targetState);
-
-            foreach (UCardHolder cardHolder in _handPile.Items)
-            {
-                cardHolder.SwitchStateHandler(targetHandler);
-            }
+            _characterEntity.StatusHandler.DisableAllCards();
         }
     }
 
@@ -109,6 +106,7 @@ namespace CardSystem
         protected override void DoRequestForPlay()
         {
             PlayRandomCard();
+            FinishRequests();
         }
 
         //TODO temporal; Switch with an actual AI that selects a card
@@ -122,7 +120,7 @@ namespace CardSystem
             randomPick = Random.Range(0, cardsTarget.Count);
             CombatSystemCharacter targetCharacter = cardsTarget[randomPick];
 
-            base.chosenCards.Add(pickCard,targetCharacter);
+            PrepareCard(pickCard,targetCharacter);
         }
     }
 }

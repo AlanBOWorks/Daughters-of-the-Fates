@@ -39,9 +39,4 @@ namespace CombatSystem
 
 
 
-    public interface IOnPreparedCharactersOrder
-    {
-        Dictionary<CombatSystemCharacter, int> CharactersOrder { get; }
-        void UpdateOrder(Dictionary<CombatSystemCharacter, int> charactersOrder);
-    }
 }

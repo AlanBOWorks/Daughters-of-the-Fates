@@ -26,7 +26,7 @@ namespace CardSystem
 
         [Title("State")]
         [ShowInInspector, HideInEditorMode, DisableInPlayMode]
-        private ICardStateHandler _currentStateHandler;
+        public ICardStateHandler CurrentStateHandler { get; private set; }
 
         public void InjectCard(CombatSystemCharacter user, ICardData card, bool isPlayer)
         {
@@ -37,14 +37,14 @@ namespace CardSystem
         }
         public void SwitchStateHandler(ICardStateHandler handler)
         {
-            _currentStateHandler = handler;
-            _currentStateHandler.OnSwitchState(this);
+            CurrentStateHandler = handler;
+            CurrentStateHandler.OnSwitchState(this);
         }
         private void SwitchStateHandler(CardsStatesManager.HandlerStates target)
         {
             CardsStatesManager manager = CardCombatSystemSingleton.Instance.PlayerEntity.cardsStatesManager;
-            _currentStateHandler = manager.GetState(target);
-            _currentStateHandler.OnSwitchState(this);
+            CurrentStateHandler = manager.GetState(target);
+            CurrentStateHandler.OnSwitchState(this);
         }
 
 
@@ -52,24 +52,24 @@ namespace CardSystem
         public void OnSubmit(BaseEventData eventData) => OnSubmit();
         public void OnSubmit()
         {
-            _currentStateHandler.OnClick(this);
+            CurrentStateHandler.OnClick(this);
         }
 
         public void OnCancel(BaseEventData eventData) => OnCancel();
         public void OnCancel()
         {
-            _currentStateHandler.OnCancel(this);
+            CurrentStateHandler.OnCancel(this);
         }
 
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            _currentStateHandler.OnPointerEnter(this);
+            CurrentStateHandler.OnPointerEnter(this);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            _currentStateHandler.OnPointerExit(this);
+            CurrentStateHandler.OnPointerExit(this);
         }
 
 
